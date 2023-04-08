@@ -1,0 +1,77 @@
+// Declarar la versión del compilador de Solidity
+pragma solidity ^0.8.0;
+
+// Declarar la interfaz ERC20
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// Declarar el contrato del token ERC20
+contract TokenERC20 is IERC20 {
+
+    // Declarar los detalles del token
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+    uint256 private _totalSupply;
+
+    // Declarar los balances de los usuarios
+    mapping(address => uint256) private _balances;
+
+    // Declarar las asignaciones de gasto aprobadas
+    mapping(address => mapping(address => uint256)) private _allowances;
+
+    // Constructor del token ERC20
+    constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 initialSupply) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        _totalSupply = initialSupply * 10 ** uint256(decimals);
+        _balances[msg.sender] = _totalSupply;
+    }
+
+    // Función para obtener el suministro total del token
+    function totalSupply() public view override returns (uint256) {
+        return _totalSupply;
+    }
+
+    // Función para obtener el saldo de un usuario
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
+
+    // Función para transferir tokens a otro usuario
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(recipient != address(0), "La dirección del destinatario es inválida");
+        require(_balances[msg.sender] >= amount, "El saldo del remitente es insuficiente");
+        _balances[msg.sender] -= amount;
+        _balances[recipient] += amount;
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    // Función para aprobar que otro usuario gaste tokens en su nombre
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    // Función para obtener la asignación de gasto aprobada de un usuario
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    // Función para transferir tokens desde una dirección a otra
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        require(recipient != address(0), "La dirección del destinatario es inválida");
+        require(_balances[sender] >= amount, "El saldo del remitente es insuficiente");
+        require(_allowances[sender][msg.sender] >= amount, "La asignación de gasto aprobada es insuficiente");
+       
